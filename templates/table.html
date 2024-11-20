@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Table: {{ table_name }}</h2>
+<p>Schema:</p>
+<ul>
+    {% for field, field_type in table.schema.items() %}
+    <li>
+        {{ field }} ({{ field_type }})
+        <form method="POST" action="{{ url_for('delete_column', db_name=db_name, table_name=table_name, column_name=field) }}" style="display:inline;">
+            <button type="submit">Delete</button>
+        </form>
+    </li>
+    {% endfor %}
+</ul>
+
+<h3>Add Column</h3>
+<form method="POST" action="{{ url_for('add_column', db_name=db_name, table_name=table_name) }}">
+    <label>Column Name:</label>
+    <input type="text" name="name" placeholder="Column name" required>
+
+    <label>Type:</label>
+    <select name="type" id="column-type" required>
+        <option value="int">Integer</option>
+        <option value="float">Real</option>
+        <option value="str">String</option>
+        <option value="char">Character</option>
+        <option value="email">Email</option>
+        <option value="enum">Enum</option>
+    </select>
+
+    <div id="enum-values-container" style="display:none;">
+        <label>Enum Values (comma-separated):</label>
+        <input type="text" name="enum_values" placeholder="e.g., Value1, Value2, Value3">
+    </div>
+
+    <button type="submit">Add Column</button>
+</form>
+
+<script>
+    const columnTypeSelect = document.getElementById('column-type');
+    const enumValuesContainer = document.getElementById('enum-values-container');
+
+    columnTypeSelect.addEventListener('change', () => {
+        if (columnTypeSelect.value === 'enum') {
+            enumValuesContainer.style.display = 'block';
+        } else {
+            enumValuesContainer.style.display = 'none';
+        }
+    });
+</script>
+
+<h3>Rows:</h3>
+<table border="1">
+    <tr>
+        {% for field in table.schema.keys() %}
+        <th>{{ field }}</th>
+        {% endfor %}
+    </tr>
+    {% for row in table.rows %}
+    <tr>
+        {% for value in row.values() %}
+        <td>{{ value }}</td>
+        {% endfor %}
+    </tr>
+    {% endfor %}
+</table>
+
+<h3>Add Row</h3>
+<form method="POST" action="{{ url_for('add_row', db_name=db_name, table_name=table_name) }}">
+    {% for field, field_type in table.schema.items() %}
+    {% if not field.endswith('_values') %} <!-- Exclude enum _values fields -->
+    <label>{{ field }}:</label>
+    <input type="text" name="{{ field }}" required>
+    {% endif %}
+    {% endfor %}
+    <button type="submit">Add Row</button>
+</form>
+
+<h3>Rows:</h3>
+<table border="1">
+    <tr>
+        {% for field in table.schema.keys() %}
+        {% if not field.endswith('_values') %} <!-- Exclude enum _values fields -->
+        <th>{{ field }}</th>
+        {% endif %}
+        {% endfor %}
+        <th>Actions</th>
+    </tr>
+    {% for row in table.rows %}
+    <tr>
+        {% for field, value in row.items() %}
+        {% if not field.endswith('_values') %} <!-- Exclude enum _values fields -->
+        <td>{{ value }}</td>
+        {% endif %}
+        {% endfor %}
+        <td>
+            <form method="POST" action="{{ url_for('update_row', db_name=db_name, table_name=table_name, row_id=loop.index0) }}" style="display:inline;">
+                {% for field, field_type in table.schema.items() %}
+                {% if not field.endswith('_values') %} <!-- Exclude enum _values fields -->
+                <input type="text" name="{{ field }}" value="{{ row[field] }}" required>
+                {% endif %}
+                {% endfor %}
+                <button type="submit">Update</button>
+            </form>
+            <form method="POST" action="{{ url_for('delete_row', db_name=db_name, table_name=table_name, row_id=loop.index0) }}" style="display:inline;">
+                <button type="submit">Delete</button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+
+<a href="{{ url_for('database_page', db_name=db_name) }}">Back to Database</a>
+{% endblock %}

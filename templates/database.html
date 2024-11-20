@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Database: {{ db_name }}</h2>
+<form method="POST" action="{{ url_for('create_table', db_name=db_name) }}">
+    <input type="text" name="name" placeholder="Table name" required>
+    <input type="text" name="schema" placeholder="Schema (e.g. {'field1': 'int', 'field2': 'str'})">
+    <button type="submit">Create Table</button>
+</form>
+<ul>
+    {% for table_name in tables %}
+    <li>
+        <a href="{{ url_for('table_page', db_name=db_name, table_name=table_name) }}">{{ table_name }}</a>
+        <form method="POST" action="{{ url_for('delete_table', db_name=db_name, table_name=table_name) }}" style="display:inline;">
+            <button type="submit">Delete</button>
+        </form>
+    </li>
+    {% endfor %}
+</ul>
+<a href="{{ url_for('index') }}">Back to Databases</a>
+{% endblock %}
